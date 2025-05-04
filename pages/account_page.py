@@ -1,42 +1,43 @@
 from pages.base_page import BasePage
 from locators.account_page_locators import AccountPageLocators
 from selenium.common.exceptions import TimeoutException
+from urls import URLs
+import allure
 
 class AccountPage(BasePage):
 
     def __init__(self, driver):
-        super().__init__(driver, url=AccountPageLocators.ACCOUNT_PAGE_URL)
+        super().__init__(driver, url=URLs.ACCOUNT_PROFILE_URL)
 
+    @allure.step('Проверка открытия страницы личного кабинета')
     def is_account_page_opened(self):
   
-        return self.get_current_url() == AccountPageLocators.ACCOUNT_PAGE_URL
+        return self.get_current_url() == URLs.ACCOUNT_PROFILE_URL
 
+    @allure.step('Клик по ссылке История заказов')
     def click_order_history_link(self):
-
-        try:
+        @self.handle_exceptions("Нет перехода на страницу Заказов")
+        def _click_order_history_link(self):
             self.click_element(AccountPageLocators.ORDER_HISTORY_LINK)
-            
-            order_history_url = "https://stellarburgers.nomoreparties.site/account/order-history"
-            self.wait_for_url_to_be(order_history_url)
-        except Exception as e:
-            raise Exception(f"Нет перехода на страницу Заказов: {str(e)}") from e
+            self.wait_for_url_to_be(URLs.ORDER_HISTORY_URL)
+        
+        _click_order_history_link(self)
 
+    @allure.step('Проверка открытия страницы истории заказов')
     def is_order_history_page_opened(self):
     
-        order_history_url = "https://stellarburgers.nomoreparties.site/account/order-history"
-        return self.get_current_url() == order_history_url
+        return self.get_current_url() == URLs.ORDER_HISTORY_URL
 
+    @allure.step('Клик по кнопке Выход')
     def click_logout_button(self):
-    
-        try:
+        @self.handle_exceptions("Не вышло разлогиниться")
+        def _click_logout_button(self):
             self.click_element(AccountPageLocators.LOGOUT_BUTTON)
-            
-            login_url = "https://stellarburgers.nomoreparties.site/login"
-            self.wait_for_url_to_be(login_url)
-        except Exception as e:
-            raise Exception(f"Не вышло разлогиниться: {str(e)}") from e
+            self.wait_for_url_to_be(URLs.LOGIN_URL)
+        
+        _click_logout_button(self)
 
+    @allure.step('Проверка открытия страницы логина')
     def is_login_page_opened(self):
       
-        login_url = "https://stellarburgers.nomoreparties.site/login"
-        return self.get_current_url() == login_url
+        return self.get_current_url() == URLs.LOGIN_URL

@@ -2,54 +2,64 @@ from pages.base_page import BasePage
 from locators.account_page_locators import AccountPageLocators
 from locators.login_page_locators import LoginPageLocators
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from urls import URLs
+import allure
 
 
 class LoginPage(BasePage):
  
     def __init__(self, driver):
-        super().__init__(driver, url="https://stellarburgers.nomoreparties.site/login")
+        super().__init__(driver, url=URLs.LOGIN_URL)
+        
+    @allure.step('Ожидание завершения процесса авторизации')
+    def wait_for_login_completion(self):
+        self.wait_for_url_contains(URLs.BASE_URL)
+        self.wait_for_element_invisible(LoginPageLocators.LOGIN_BUTTON)
 
+    @allure.step('Ввод email')
     def enter_email(self, email):
-
-        try:
+        @self.handle_exceptions("Не введен email")
+        def _enter_email(self, email):
             self.enter_text(LoginPageLocators.EMAIL_FIELD, email)
-        except Exception as e:
-            raise Exception(f"Не введен email: {str(e)}") from e
+        
+        _enter_email(self, email)
 
+    @allure.step('Ввод пароля')
     def enter_password(self, password):
-
-        try:
+        @self.handle_exceptions("Не введен пароль")
+        def _enter_password(self, password):
             self.enter_text(LoginPageLocators.PASSWORD_FIELD, password)
-        except Exception as e:
-            raise Exception(f"Не введен пароль: {str(e)}") from e
+        
+        _enter_password(self, password)
 
+    @allure.step('Клик по кнопке Войти')
     def click_login_button(self):
- 
-        try:
+        @self.handle_exceptions("Не кликнута кнопка Логина")
+        def _click_login_button(self):
             self.click_element(LoginPageLocators.LOGIN_BUTTON)
-        except Exception as e:
-            raise Exception(f"Не кликнута кнопка Логина: {str(e)}") from e
+        
+        _click_login_button(self)
 
+    @allure.step('Клик по кнопке Личный кабинет')
     def click_account_button(self):
-  
-        try:
+        @self.handle_exceptions("Нет перехода на страницу Личного кабинета")
+        def _click_account_button(self):
             self.click_element(AccountPageLocators.ACCOUNT_BUTTON)
-            
-            self.wait_for_url_to_be(AccountPageLocators.ACCOUNT_PAGE_URL)
-            
-            # Import here to avoid circular import
+            self.wait_for_url_to_be(URLs.ACCOUNT_PROFILE_URL)
+
             from pages.account_page import AccountPage
             return AccountPage(self.driver)
-        except Exception as e:
-            raise Exception(f"Нет перехода на страницу Личного кабинета: {str(e)}") from e
+        
+        return _click_account_button(self)
             
+    @allure.step('Логин с email {email}')
     def login(self, email, password):
-
-        try:
+        @self.handle_exceptions("Логин не удался")
+        def _login(self, email, password):
             self.open()
             self.enter_email(email)
             self.enter_password(password)
             self.click_login_button()
             return self
-        except Exception as e:
-            raise Exception(f"Логин не удался: {str(e)}") from e
+        
+        return _login(self, email, password)

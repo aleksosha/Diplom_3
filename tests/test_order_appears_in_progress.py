@@ -1,21 +1,20 @@
 import pytest
-import time
+import allure
 from pages.main_page import MainPage
 from pages.feed_page import FeedPage
 from pages.login_page import LoginPage
 from pages.header_page import HeaderPage
 
-user_credentials = [
-    pytest.param("drobotunalexandra@yandex.ru", "drobotun123", id="valid_user"),
-]
 
-@pytest.mark.parametrize("email, password", user_credentials)
-def test_order_appears_in_progress(driver, base_url, email, password):
-
-    try:
-        driver.get(base_url)
+class TestOrderAppearsInProgress:
+    @allure.title("Проверка появления заказа в ленте в работе")
+    def test_order_appears_in_progress(self, driver, base_url):
+        email = "drobotunalexandra@yandex.ru"
+        password = "drobotun123"
         
         main_page = MainPage(driver)
+        main_page.open_main_page()
+        
         header_page = HeaderPage(driver)
         
         main_page.drag_and_drop_ingredient()
@@ -28,28 +27,23 @@ def test_order_appears_in_progress(driver, base_url, email, password):
         login_page.enter_password(password)
         login_page.click_login_button()
         
-        time.sleep(2)
+        login_page.wait_for_login_completion()
         
         main_page.click_order_button()
         
         main_page.wait_for_order_confirmation_modal()
         
-        time.sleep(5)
+        main_page.wait_for_order_processing()
         
         order_number = main_page.get_order_number()
         
-        main_page.close_modal()
+        main_page.close_order_modal()
         
-        main_page.wait_for_modal_to_disappear()
+        main_page.wait_for_element_invisible(main_page.locators.ORDER_CONFIRMATION_MODAL)
         
         feed_page = FeedPage(driver)
-        feed_page.open()
-        
-        time.sleep(5)
-        
-        is_in_progress = feed_page.is_order_in_progress(order_number)
+        feed_page.open_feed_page()
+
+        is_in_progress = feed_page.wait_for_order_in_progress(order_number)
         
         assert is_in_progress, f"Номер заказа {order_number} не появился в работе"
-        
-    except Exception as e:
-        pytest.fail(f"Тест упал с ошибкой: {str(e)}")

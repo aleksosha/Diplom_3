@@ -1,33 +1,36 @@
 import pytest
+import allure
 from pages.login_page import LoginPage
 from pages.account_page import AccountPage
 from conftest import driver
 
 
-
-test_data = [
-    pytest.param("drobotunalexandra@yandex.ru", "drobotun123", True, id="valid_credentials"),
-    pytest.param("invalid@example.com", "wrongpassword", False, id="invalid_credentials"),
-    pytest.param("", "drobotun123", False, id="empty_email"),
-    pytest.param("drobotunalexandra@yandex.ru", "", False, id="empty_password")
-]
-
-@pytest.mark.parametrize("email, password, expected_success", test_data)
-def test_account_page(driver, email, password, expected_success):
-
-    login_page = LoginPage(driver)
-    login_page.login(email, password)
-    
-    try:
-
+class TestAccountPage:
+    @allure.title("Проверка успешного перехода на страницу личного кабинета")
+    def test_successful_account_page_navigation(self, driver):
+        email = "drobotunalexandra@yandex.ru"
+        password = "drobotun123"
+        
+        login_page = LoginPage(driver)
+        login_page.login(email, password)
+        
+        login_page.wait_for_login_completion()
+        
         account_page = login_page.click_account_button()
-
         is_account_page_opened = account_page.is_account_page_opened()
         
-        if expected_success:
-            assert is_account_page_opened, "Переход на страницу Личного кабинета не выполнен"
-        else:
-            pytest.fail(f"Логин должен быть не успешен с: {email} и паролем: {password}, но был успешен")
-    except Exception as e:
-        if expected_success:
-            pytest.fail(f"Логин должен быть успешен, но упала ошибка: {str(e)}")
+        assert is_account_page_opened, "Переход на страницу Личного кабинета не выполнен"
+    
+    @allure.title("Проверка невозможности перехода на страницу личного кабинета с неверными учетными данными")
+    @pytest.mark.parametrize("email, password", [
+        pytest.param("invalid@example.com", "wrongpassword", id="invalid_credentials"),
+        pytest.param("", "drobotun123", id="empty_email"),
+        pytest.param("drobotunalexandra@yandex.ru", "", id="empty_password")
+    ])
+    def test_unsuccessful_account_page_navigation(self, driver, email, password):
+        login_page = LoginPage(driver)
+        login_page.login(email, password)
+ 
+        with pytest.raises(Exception):
+            account_page = login_page.click_account_button()
+            assert not account_page.is_account_page_opened(), f"Логин должен быть не успешен с: {email} и паролем: {password}, но был успешен"

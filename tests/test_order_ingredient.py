@@ -1,18 +1,19 @@
 import pytest
+import allure
 from pages.main_page import MainPage
 from pages.login_page import LoginPage
-from conftest import driver
 
-user_credentials = [
-    pytest.param("drobotunalexandra@yandex.ru", "drobotun123", True, id="valid_user"),
-]
 
-@pytest.mark.parametrize("email, password, expected_success", user_credentials)
-def test_order_ingredient(driver, base_url, email, password, expected_success):
-
-    try:
+class TestOrderIngredient:
+    @allure.title("Проверка оформления заказа")
+    def test_order_ingredient(self, driver, base_url):
+        email = "drobotunalexandra@yandex.ru"
+        password = "drobotun123"
+        
         login_page = LoginPage(driver)
         login_page.login(email, password)
+        
+        login_page.wait_for_login_completion()
         
         main_page = MainPage(driver)
         main_page.drag_and_drop_ingredient()
@@ -23,11 +24,4 @@ def test_order_ingredient(driver, base_url, email, password, expected_success):
         
         main_page.click_order_button()
         
-        if expected_success:
-            main_page.wait_for_order_confirmation_modal()
-        else:
-            pass
-            
-    except Exception as e:
-        if expected_success:
-            pytest.fail(f"Тест упал с ошибкой: {str(e)}")
+        main_page.wait_for_order_confirmation_modal()

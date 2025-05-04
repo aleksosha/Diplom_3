@@ -1,27 +1,26 @@
 import pytest
-import time
+import allure
 from pages.main_page import MainPage
 from pages.feed_page import FeedPage
 from pages.login_page import LoginPage
 from pages.header_page import HeaderPage
 
-user_credentials = [
-    pytest.param("drobotunalexandra@yandex.ru", "drobotun123", id="valid_user"),
-]
 
-@pytest.mark.parametrize("email, password", user_credentials)
-def test_total_today_increase_after_order(driver, base_url, email, password):
-
-    try:
-        driver.get(base_url)
+class TestTotalTodayIncreaseAfterOrder:
+    @allure.title("Проверка увеличения счетчика заказов за сегодня после заказа")
+    def test_total_today_increase_after_order(self, driver, base_url):
+        email = "drobotunalexandra@yandex.ru"
+        password = "drobotun123"
         
         main_page = MainPage(driver)
+        main_page.open_main_page()
+        
         header_page = HeaderPage(driver)
         
         feed_page = FeedPage(driver)
-        feed_page.open()
-        
-        time.sleep(2)
+        feed_page.open_feed_page()
+ 
+        feed_page.wait_for_total_today_counter()
         
         initial_total_today = feed_page.get_total_today_counter()
         
@@ -36,26 +35,21 @@ def test_total_today_increase_after_order(driver, base_url, email, password):
         login_page.enter_email(email)
         login_page.enter_password(password)
         login_page.click_login_button()
-        
-        time.sleep(2)
+  
+        login_page.wait_for_login_completion()
         
         main_page.click_order_button()
         
         main_page.wait_for_order_confirmation_modal()
+
+        main_page.wait_for_order_processing()
         
-        time.sleep(3)
+        main_page.close_order_modal()
+
+        main_page.wait_for_element_invisible(main_page.locators.ORDER_CONFIRMATION_MODAL)
         
-        main_page.close_modal()
+        feed_page.open_feed_page()
         
-        main_page.wait_for_modal_to_disappear()
-        
-        feed_page.open()
-        
-        time.sleep(2)
-        
-        new_total_today = feed_page.get_total_today_counter()
+        new_total_today = feed_page.wait_for_total_today_increase(initial_total_today)
         
         assert new_total_today > initial_total_today, f"Значение не увеличилось. Изначально: {initial_total_today}, Новое: {new_total_today}"
-        
-    except Exception as e:
-        pytest.fail(f"Тест упал с ошибкой: {str(e)}")
